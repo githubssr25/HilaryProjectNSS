@@ -294,35 +294,40 @@ app.MapGet("api/services", async (HilaryDbContext db, IMapper mapper) =>
 
 app.MapGet("api/stylists", async (HilaryDbContext db, IMapper mapper) =>
 {
-
-     var appointment = await db.Appointments
-        .Include(a => a.Customer)
-        .Include(a => a.Stylist)
-        .Include(a => a.AppointmentServiceJoinList)
-        .ThenInclude(asj => asj.Service)
-        .ThenInclude(service => service.StylistServiceJoinList)
+    var stylists = await db.Stylists
+        .Include(s => s.Appointments)
+            .ThenInclude(a => a.Customer) // Include Customer details for each appointment
+        .Include(s => s.StylistServiceJoinList)
+            .ThenInclude(ssj => ssj.Service) // Include Services for each Stylist
+        .Select(s => new
+        {
+            StylistId = s.Id, // Stylist ID
+            Name = s.Name, // Stylist Name
+            IsActive = s.IsActive, // Stylist active status
+            Appointments = s.Appointments.Select(a => new
+            {
+                AppointmentId = a.AppointmentId,
+                Customer = new
+                {
+                    CustomerId = a.CustomerId,
+                    Name = a.Customer.Name
+                },
+                TimeOf = a.TimeOf,
+                IsCancelled = a.IsCancelled
+            }).ToList(),
+            Services = s.StylistServiceJoinList.Select(ssj => new
+            {
+                ServiceId = ssj.Service.ServiceId,
+                Name = ssj.Service.Name,
+                Price = ssj.Service.Price,
+                DurationMinutes = ssj.Service.DurationMinutes
+            }).ToList()
+        })
         .ToListAsync();
 
-
-    var stylist = await db.Stylists
-    .Include(stylist => stylist.Appointments)
-    .Include(stylist => stylist.StylistServiceJoinList)
-    .Select(indStylist => new 
-    { 
-        Id = indStylist.Id, // Correctly map the properties
-        Name = indStylist.Name,
-        IsActive = indStylist.IsActive,
-        Appointments = indStylist.Appointments,
-        Services = indStylist.StylistServiceJoinList
-        .Select(ssJoin => ssJoin.Service).ToList()
-        //YOU MUST DO TO LIST YOU CANT JUST ACCESS 1 OF THE 2 OBJECTS OF STYLIST
-        //WITHIN THE JOIN TABLE EVNE IF STYLIST IS NAV PROP
-    })
-    .ToListAsync(); // Properly chain ToListAsync
-
-
-
+    return Results.Ok(stylists);
 });
+
 
 app.MapGet("api/stylists/{id}", async (HilaryDbContext db, IMapper mapper, int id) =>
 {
@@ -352,6 +357,18 @@ app.MapPut("api/stylists/{id}", async (HilaryDbContext db, IMapper mapper, int i
     var stylistDTO = mapper.Map<StylistDTO>(stylist); // Return updated DTO
     return Results.Ok(stylistDTO);
 });
+
+app.MapGet("api/debug-appointment-services", async (HilaryDbContext db) =>
+{
+    var existingData = await db.AppointmentServices.ToListAsync();
+    Console.WriteLine("=== Existing Data in AppointmentServices ===");
+    foreach (var entry in existingData)
+    {
+        Console.WriteLine($"AppointmentServiceId: {entry.AppointmentServiceId}, AppointmentId: {entry.AppointmentId}, ServiceId: {entry.ServiceId}, Cost: {entry.Cost}");
+    }
+    return Results.Ok(existingData);
+});
+
 
 
 app.Run();

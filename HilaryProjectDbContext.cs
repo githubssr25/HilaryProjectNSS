@@ -6,7 +6,8 @@ public class HilaryDbContext : DbContext
     public DbSet<Stylist> Stylists { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
     public DbSet<Service> Services { get; set; }
-    public DbSet<AppointmentServiceJoinTable> AppointmentServices { get; set; }
+   public DbSet<AppointmentServiceJoinTable> AppointmentServices { get; set; }
+
     public DbSet<StylistServiceJoinTable> StylistServices { get; set; }
 
     public HilaryDbContext(DbContextOptions<HilaryDbContext> options) : base(options)
@@ -80,6 +81,25 @@ modelBuilder.Entity<Appointment>().HasData(
     new Appointment { AppointmentId = 15, CustomerId = 6, StylistId = 1, TimeOf = new DateTime(2024, 12, 5, 12, 0, 0), IsCancelled = false }
 );
 
+// modelBuilder.Entity<AppointmentServiceJoinTable>().HasData(
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 1, AppointmentId = 1, ServiceId = 1, Cost = 20.00M }, // Haircut for Appointment 1
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 2, AppointmentId = 1, ServiceId = 2, Cost = 50.00M }, // Hair Coloring for Appointment 1
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 3, AppointmentId = 2, ServiceId = 3, Cost = 15.00M }, // Beard Trim for Appointment 2
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 4, AppointmentId = 2, ServiceId = 4, Cost = 70.00M }, // Perm for Appointment 2
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 5, AppointmentId = 3, ServiceId = 5, Cost = 30.00M }  // Hair Treatment for Appointment 3
+// );
+
+// modelBuilder.Entity<AppointmentServiceJoinTable>().HasData(
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 1, AppointmentId = 1, ServiceId = 1, Cost = 20.00M }, // Haircut for Appointment 1
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 2, AppointmentId = 1, ServiceId = 2, Cost = 50.00M }, // Hair Coloring for Appointment 1
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 3, AppointmentId = 2, ServiceId = 3, Cost = 15.00M }, // Beard Trim for Appointment 2
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 4, AppointmentId = 2, ServiceId = 4, Cost = 70.00M }, // Perm for Appointment 2
+//     new AppointmentServiceJoinTable { AppointmentServiceId = 5, AppointmentId = 3, ServiceId = 5, Cost = 30.00M }  // Hair Treatment for Appointment 3
+// );
+
+
+
+
 modelBuilder.Entity<Appointment>()
 .HasOne(a => a.Customer)
 .WithMany(c => c.Appointments)
@@ -98,6 +118,15 @@ modelBuilder.Entity<AppointmentServiceJoinTable>()
 //AppointmentServiceJoinList (a List<AppointmentServiceJoinTable>), which lets us access all the related join table entries for a given Appointment.
 .HasForeignKey(asj => asj.AppointmentId);
 //EF Core that the AppointmentId column in AppointmentServiceJoinTable is the foreign key linking to the Appointment entity.
+
+ // Service relationship
+    modelBuilder.Entity<AppointmentServiceJoinTable>()
+        .HasOne(asj => asj.Service)
+        .WithMany(s => s.AppointmentServiceJoinList)
+        .HasForeignKey(asj => asj.ServiceId);
+
+
+
 
 
 modelBuilder.Entity<StylistServiceJoinTable>()
