@@ -6,3 +6,4 @@ public class UpdateAppointmentDTO
     public bool IsCancelled { get; set; }
     public List<int> UpdatedServiceIds { get; set; } // IDs of updated services
 }
+ 

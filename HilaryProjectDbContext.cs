@@ -38,16 +38,18 @@ modelBuilder.Entity<Customer>().HasData(
 
 
     // Seed data for Stylists
+// Seed data for Stylists
 modelBuilder.Entity<Stylist>().HasData(
-    new Stylist { StylistId = 1, Name = "Sophia Carter", IsActive = true },
-    new Stylist { StylistId = 2, Name = "Oliver Davis", IsActive = true },
-    new Stylist { StylistId = 3, Name = "Liam Taylor", IsActive = false },
-    new Stylist { StylistId = 4, Name = "Emma Wilson", IsActive = true },
-    new Stylist { StylistId = 5, Name = "Ava Moore", IsActive = true },
-    new Stylist { StylistId = 6, Name = "Mason Harris", IsActive = false },
-    new Stylist { StylistId = 7, Name = "Lucas Walker", IsActive = true },
-    new Stylist { StylistId = 8, Name = "Mia Hall", IsActive = true }
+    new Stylist { Id = 1, Name = "Sophia Carter", IsActive = true },
+    new Stylist { Id = 2, Name = "Oliver Davis", IsActive = true },
+    new Stylist { Id = 3, Name = "Liam Taylor", IsActive = false },
+    new Stylist { Id = 4, Name = "Emma Wilson", IsActive = true },
+    new Stylist { Id = 5, Name = "Ava Moore", IsActive = true },
+    new Stylist { Id = 6, Name = "Mason Harris", IsActive = false },
+    new Stylist { Id = 7, Name = "Lucas Walker", IsActive = true },
+    new Stylist { Id = 8, Name = "Mia Hall", IsActive = true }
 );
+
 
     // Seed data for Services
    modelBuilder.Entity<Service>().HasData(
@@ -77,6 +79,43 @@ modelBuilder.Entity<Appointment>().HasData(
     new Appointment { AppointmentId = 14, CustomerId = 5, StylistId = 8, TimeOf = new DateTime(2024, 12, 5, 11, 0, 0), IsCancelled = false },
     new Appointment { AppointmentId = 15, CustomerId = 6, StylistId = 1, TimeOf = new DateTime(2024, 12, 5, 12, 0, 0), IsCancelled = false }
 );
+
+modelBuilder.Entity<Appointment>()
+.HasOne(a => a.Customer)
+.WithMany(c => c.Appointments)
+.HasForeignKey(a => a.CustomerId);
+
+modelBuilder.Entity<Appointment>()
+.HasOne(a => a.Stylist)
+.WithMany(s => s.Appointments)
+.HasForeignKey(a => a.StylistId);
+
+modelBuilder.Entity<AppointmentServiceJoinTable>()
+.HasOne(asj => asj.Appointment)
+.WithMany(a => a.AppointmentServiceJoinList)
+//Appointment can have many AppointmentServiceJoinTable entries.
+//The Appointment entity has a navigation property called 
+//AppointmentServiceJoinList (a List<AppointmentServiceJoinTable>), which lets us access all the related join table entries for a given Appointment.
+.HasForeignKey(asj => asj.AppointmentId);
+//EF Core that the AppointmentId column in AppointmentServiceJoinTable is the foreign key linking to the Appointment entity.
+
+
+modelBuilder.Entity<StylistServiceJoinTable>()
+    .HasOne(ssj => ssj.Stylist)
+    .WithMany(s => s.StylistServiceJoinList)
+    .HasForeignKey(ssj => ssj.StylistId);
+
+modelBuilder.Entity<StylistServiceJoinTable>()
+    .HasOne(ssj => ssj.Service)
+    .WithMany(s => s.StylistServiceJoinList)
+    .HasForeignKey(ssj => ssj.ServiceId);
+
+
+
+
+
+
+
 
 }
 

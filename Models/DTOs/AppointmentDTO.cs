@@ -10,4 +10,8 @@ public class AppointmentDTO
     public DateTime TimeOf { get; set; }
     public bool IsCancelled { get; set; }
     public List<int> ServiceIds { get; set; } // IDs of services for this appointment
+
+    public CustomerDTO? CustomerDTO { get; set;}
+
+    public StylistDTO? StylistDTO { get; set;}
 }

@@ -11,5 +11,5 @@ public class Appointment
     // Navigation properties
     public Customer Customer { get; set; }
     public Stylist Stylist { get; set; }
-    public List<AppointmentServiceJoinTable> AppointmentServices { get; set; }
+    public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
 }

@@ -9,6 +9,6 @@ public class Service
     public int DurationMinutes { get; set; } // Duration of the service in minutes
 
     // Navigation properties
-    public List<AppointmentServiceJoinTable> AppointmentServices { get; set; }
-    public List<StylistServiceJoinTable> StylistServices { get; set; }
+    public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
+    public List<StylistServiceJoinTable> StylistServiceJoinList { get; set; }
 }
