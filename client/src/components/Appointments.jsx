@@ -15,10 +15,23 @@ export const Appointments = () => {
       <h1>Appointments</h1>
       <button onClick={handleCreate}>Create Appointment</button>
       <ul>
-        {appointments.map((appointment) => (
-          <li key={appointment.id}>{appointment.time}</li>
-        ))}
-      </ul>
+  {appointments.map((appointment) => {
+    console.log('rendering appointment:', appointment);
+    return (
+      <div key={appointment.appointmentId}>
+          <li>Appointment Info</li>
+          <li> AppointmentID: {appointment.appointmentId}</li>
+        <li> Time Of Appointment {appointment.timeOf}</li>
+        <li> Customer Name {appointment.customer.name} </li>
+        <li> Has the Appointment Been Cancelled: {appointment.IsCancelled ? 'yes' : 'no'} </li>
+        <li> Stylist for the Appointment: {appointment.stylist.name} </li>
+       
+      
+      </div>
+    );
+  })}
+</ul>
+
     </div>
   );
 };

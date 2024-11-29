@@ -7,7 +7,7 @@ export default defineConfig(() => {
       open: true, // Automatically opens the app in the browser
       proxy: {
         "/api": {
-          target: "https://localhost:5001", // Your backend's HTTPS URL
+          target: "http://localhost:5000", // Your backend's HTTPS URL
           changeOrigin: true,
           secure: false, // Allows using self-signed certificates
         },

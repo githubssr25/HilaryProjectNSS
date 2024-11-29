@@ -24,6 +24,10 @@ modelBuilder.Entity<AppointmentServiceJoinTable>()
 modelBuilder.Entity<StylistServiceJoinTable>()
 .HasKey(asj => asj.StylistServiceId);// Specify primary key
 
+modelBuilder.Entity<StylistServiceJoinTable>()
+    .ToTable("StylistServices"); // Explicitly set the table name goign to add this upon recreation 11/29 951 see what happens 
+
+
     // Seed data for Customers
 modelBuilder.Entity<Customer>().HasData(
     new Customer { CustomerId = 1, Name = "Alice Johnson" },
