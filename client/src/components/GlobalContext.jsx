@@ -15,22 +15,28 @@ export const GlobalProvider = ({ children }) => {
   const [services, setServices] = useState([]);
   const [stylists, setStylists] = useState([]);
 
+    // Fetch initial data
   // Fetch initial data
+  const fetchAppointments = async () => {
+    try {
+      const fetchedAppointments = await getAllAppointments();
+      console.log("Fetched Appointments in GlobalProvider:", fetchedAppointments);
+      setAppointments(fetchedAppointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Starting to fetch data..."); // Debug log
       try {
-        const fetchedAppointments = await getAllAppointments();
-        console.log("Fetched Appointments in GlobalProvider:", fetchedAppointments); // Debug log
+        await fetchAppointments(); // Fetch appointments initially
         const fetchedCustomers = await getAllCustomers();
-        console.log("Fetched Customers in GlobalProvider:", fetchedCustomers); // Debug log
+        console.log("Fetched Customers in GlobalProvider:", fetchedCustomers);// Debug log// Debug log
         const fetchedServices = await getAllServices();
         console.log("Fetched Services in GlobalProvider:", fetchedServices); // Debug log
         const fetchedStylists = await getAllStylists(); // Fetch stylists
         console.log("Fetched Stylists in GlobalProvider:", fetchedStylists); // Debug log
-
-
-        setAppointments(fetchedAppointments);
         setCustomers(fetchedCustomers);
         setServices(fetchedServices);
         setStylists(fetchedStylists); // Set stylists state
@@ -56,6 +62,7 @@ export const GlobalProvider = ({ children }) => {
     deleteAppointment,
     createCustomer,
     deleteCustomer,
+    refreshAppointments: fetchAppointments, // Expose refreshAppointments
   };
 
   return (

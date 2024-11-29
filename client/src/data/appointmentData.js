@@ -24,16 +24,35 @@ export const getAppointmentById = async (id) => {
     }
 };
 
-  export const createAppointment = async (appointment) => {
-    const response = await fetch("http://localhost:5173/api/appointments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(appointment),
-    });
-    const data = await response.json();
-    console.log("Created Appointment:", data);
-    return data;
-  };
+export const createAppointment = async (customerId, stylistId, serviceIds) => {
+
+  console.log("Request body:", {
+    customerId: parseInt(customerId, 10),
+    stylistId: parseInt(stylistId, 10),
+    timeOf: new Date().toISOString(),
+    serviceIds: serviceIds,
+  });
+  
+  const response = await fetch("api/appointments", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json", // Important: Ensure the backend knows it's JSON
+    },
+    body: JSON.stringify({
+      customerId: parseInt(customerId, 10), // Ensure integers
+  stylistId: parseInt(stylistId, 10),
+      timeOf: new Date().toISOString(), // Optional: Send current time if not passed
+      serviceIds: serviceIds, // List of selected service IDs
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create appointment: ${response.statusText}`);
+  }
+
+  return response.json(); // Parse and return the response
+};
+
   
   export const updateAppointment = async (id, updatedData) => {
     const response = await fetch(`http://localhost:5173/api/appointments/${id}`, {

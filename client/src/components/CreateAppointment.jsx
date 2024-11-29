@@ -1,29 +1,70 @@
 import { useContext } from 'react';
 import { GlobalContext } from './GlobalContext';
 import { createContext, useState, useEffect } from 'react';
+import {createAppointment} from '../data/appointmentData'
 
 
 export const CreateAppointment = () => {
-  const { customers, services, stylists, createAppointment } =
+  const { customers, services, stylists, refreshAppointments } =
     useContext(GlobalContext);
   const [listOfServiceId, setListOfServiceId] = useState([]);
-  const [chosenCustomerId, setChosenCustomerId] = useState(0);
+  const [chosenCustomerId, setChosenCustomerId] = useState(null);
   const [chosenStylistId, setChosenStylistId] = useState(null);
   const [chosenStylist, setChosenStylist] = useState(null);
+  const [createdAppointment, setCreatedAppointment] = useState(null);
+
+  // Sync selected stylist
+// Sync selected stylist
+useEffect(() => {
+    if (chosenStylistId) {
+      console.log("Finding stylist with ID:", chosenStylistId);
+      console.log("Current stylists:", stylists); // Log all stylists for comparison
+  
+      const selectedStylist = stylists.find(
+        (stylist) => stylist.stylistId === chosenStylistId
+      );
+  
+      console.log("Chosen Stylist:", selectedStylist); // Log the selected stylist
+      setChosenStylist(selectedStylist || null);
+    } else {
+      console.log("No Stylist Selected");
+      setChosenStylist(null);
+    }
+  }, [chosenStylistId, stylists]);
+  
+
+  // UseEffect to refresh global state after an appointment is created
+//   useEffect(() => {
+//     if (createdAppointment) {
+//       console.log("Fetching updated appointments after creation...");
+//       refreshAppointments(); // Trigger the global state to refresh the appointments
+//     }
+//   }, [createdAppointment, refreshAppointments]);
 
   const onSubmitForm = async (event) => {
     event.preventDefault();
-    // Handle form submission logic here
+  
+    if (chosenCustomerId && chosenStylistId && chosenStylist) {
+      try {
+        const ourCreatedAppointment = await createAppointment(
+          chosenCustomerId,
+          chosenStylistId,
+          listOfServiceId
+        );
+  
+        if (ourCreatedAppointment) {
+          setCreatedAppointment(ourCreatedAppointment); // Optional
+          console.log("Appointment created:", ourCreatedAppointment);
+  
+          // Refresh appointments immediately after creation
+          console.log("Refreshing appointments...");
+          await refreshAppointments();
+        }
+      } catch (error) {
+        console.error("Error creating appointment:", error);
+      }
+    }
   };
-
-  console.log(
-    "Current customers, services, and stylists from context:",
-    customers,
-    services,
-    stylists
-  );
-  console.log("Chosen Stylist ID:", chosenStylistId);
-  console.log("Chosen Stylist:", chosenStylist);
 
   const addServiceIdToList = (event, serviceId) => {
     if (event.target.checked) {
@@ -45,25 +86,7 @@ export const CreateAppointment = () => {
     setChosenStylistId(stylistId);
   };
 
-  // Sync selected stylist
-// Sync selected stylist
-useEffect(() => {
-    if (chosenStylistId) {
-      console.log("Finding stylist with ID:", chosenStylistId);
-      console.log("Current stylists:", stylists); // Log all stylists for comparison
-  
-      const selectedStylist = stylists.find(
-        (stylist) => stylist.stylistId === chosenStylistId
-      );
-  
-      console.log("Chosen Stylist:", selectedStylist); // Log the selected stylist
-      setChosenStylist(selectedStylist || null);
-    } else {
-      console.log("No Stylist Selected");
-      setChosenStylist(null);
-    }
-  }, [chosenStylistId, stylists]);
-  
+
 
   /* <div> */
   /* <label htmlFor="stylist">Select Stylist</label>
@@ -156,6 +179,12 @@ useEffect(() => {
         <div></div>
         <button type="submit"> Click Here to Create Appointment</button>
       </form>
+
+      <div>
+        { createdAppointment && (
+            <h1> Successfully Created New Appointment </h1>
+        )}
+    </div>
     </>
   );
 }
