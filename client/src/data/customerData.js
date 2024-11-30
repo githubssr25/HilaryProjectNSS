@@ -24,3 +24,13 @@ export const getAllCustomers = async () => {
     return response.status === 204; // Return true if successfully deleted
   };
   
+  export const getCustomerAppointmentAndServices = async (customerId) => {
+    const response = await fetch(`http://localhost:5173/api/customers/${customerId}/appointmentAndService`);
+    if (!response.ok) {
+      console.error(`Failed to fetch appointments and services for CustomerId ${customerId}`);
+      return null; // Return null if the request fails
+    }
+    const data = await response.json();
+    console.log(`Fetched Appointments and Services for CustomerId ${customerId}:`, data);
+    return data;
+  };
