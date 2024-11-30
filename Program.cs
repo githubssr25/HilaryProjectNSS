@@ -198,54 +198,54 @@ app.MapGet("api/appointments", async (HilaryDbContext db) =>
     return Results.Ok(appointments); // Return all appointments
 });
 
+//sdont think its working right 
+// app.MapGet("api/appointments/customer/{customerId}", async (HilaryDbContext db, int customerId) =>
+// {
+//     var appointments = await db.Appointments
+//         .Where(a => a.CustomerId == customerId) // Filter by CustomerId
+//         .Include(a => a.Customer) // Include Customer details
+//         .Include(a => a.Stylist) // Include Stylist details
+//         .Include(a => a.AppointmentServiceJoinList) // Include Join Table for Services
+//             .ThenInclude(asj => asj.Service) // Include Services from the Join Table
+//         .Select(indAppt => new
+//         {
+//             AppointmentId = indAppt.AppointmentId,
+//             CustomerId = indAppt.CustomerId,
+//             CustomerName = indAppt.Customer.Name,
+//             StylistName = indAppt.Stylist.Name,
+//             TimeOf = indAppt.TimeOf,
+//             IsCancelled = indAppt.IsCancelled,
+//             Services = indAppt.AppointmentServiceJoinList.Select(asJoin => new
+//             {
+//                 ServiceId = asJoin.ServiceId,
+//                 Name = asJoin.Service.Name,
+//                 Price = asJoin.Service.Price,
+//                 DurationMinutes = asJoin.Service.DurationMinutes
+//             }).ToList(),
+//             Customer = new
+//             {
+//                 CustomerId = indAppt.Customer.CustomerId,
+//                 Name = indAppt.Customer.Name,
+//                 AppointmentIds = indAppt.Customer.Appointments.Select(appt => appt.AppointmentId).ToList()
+//             },
+//             Stylist = new
+//             {
+//                 StylistId = indAppt.Stylist.Id,
+//                 Name = indAppt.Stylist.Name,
+//                 IsActive = indAppt.Stylist.IsActive,
+//                 ServiceIds = indAppt.Stylist.StylistServiceJoinList
+//                     .Select(ssj => ssj.ServiceId)
+//                     .ToList()
+//             }
+//         }).ToListAsync();
 
-app.MapGet("api/appointments/customer/{customerId}", async (HilaryDbContext db, int customerId) =>
-{
-    var appointments = await db.Appointments
-        .Where(a => a.CustomerId == customerId) // Filter by CustomerId
-        .Include(a => a.Customer) // Include Customer details
-        .Include(a => a.Stylist) // Include Stylist details
-        .Include(a => a.AppointmentServiceJoinList) // Include Join Table for Services
-            .ThenInclude(asj => asj.Service) // Include Services from the Join Table
-        .Select(indAppt => new
-        {
-            AppointmentId = indAppt.AppointmentId,
-            CustomerId = indAppt.CustomerId,
-            CustomerName = indAppt.Customer.Name,
-            StylistName = indAppt.Stylist.Name,
-            TimeOf = indAppt.TimeOf,
-            IsCancelled = indAppt.IsCancelled,
-            Services = indAppt.AppointmentServiceJoinList.Select(asJoin => new
-            {
-                ServiceId = asJoin.ServiceId,
-                Name = asJoin.Service.Name,
-                Price = asJoin.Service.Price,
-                DurationMinutes = asJoin.Service.DurationMinutes
-            }).ToList(),
-            Customer = new
-            {
-                CustomerId = indAppt.Customer.CustomerId,
-                Name = indAppt.Customer.Name,
-                AppointmentIds = indAppt.Customer.Appointments.Select(appt => appt.AppointmentId).ToList()
-            },
-            Stylist = new
-            {
-                StylistId = indAppt.Stylist.Id,
-                Name = indAppt.Stylist.Name,
-                IsActive = indAppt.Stylist.IsActive,
-                ServiceIds = indAppt.Stylist.StylistServiceJoinList
-                    .Select(ssj => ssj.ServiceId)
-                    .ToList()
-            }
-        }).ToListAsync();
+//     if (!appointments.Any())
+//     {
+//         return Results.NotFound($"No appointments found for CustomerId {customerId}");
+//     }
 
-    if (!appointments.Any())
-    {
-        return Results.NotFound($"No appointments found for CustomerId {customerId}");
-    }
-
-    return Results.Ok(appointments);
-});
+//     return Results.Ok(appointments);
+// });
 
 
 app.MapGet("api/appointments/{id}", async (HilaryDbContext db, IMapper mapper, int id) =>
@@ -545,6 +545,80 @@ app.MapGet("api/debug-appointment-services", async (HilaryDbContext db) =>
     }
     return Results.Ok(existingData);
 });
+
+
+
+/// these 2 commented out did work btw if you need them later 
+// app.MapGet("api/customers/{customerId}/appointments", async (int customerId, HilaryDbContext db) =>
+// {
+//     var appointmentIds = await db.Appointments
+//         .Where(a => a.CustomerId == customerId)
+//         .Select(a => a.AppointmentId)
+//         .ToListAsync();
+
+//     return Results.Ok(appointmentIds);
+// });
+
+
+// app.MapGet("api/appointments/{appointmentId}/services", async (int appointmentId, HilaryDbContext db) =>
+// {
+//     var appointmentWithServices = await db.Appointments
+//         .Where(a => a.AppointmentId == appointmentId)
+//         .Select(a => new
+//         {
+//             AppointmentId = a.AppointmentId,
+//             Services = a.AppointmentServiceJoinList
+//                 .Select(asj => new
+//                 {
+//                     ServiceId = asj.Service.ServiceId,
+//                     Name = asj.Service.Name,
+//                     Price = asj.Service.Price,
+//                     DurationMinutes = asj.Service.DurationMinutes
+//                 })
+//                 .ToList()
+//         })
+//         .FirstOrDefaultAsync();
+
+//     if (appointmentWithServices == null)
+//     {
+//         return Results.NotFound(new { Message = $"No services found for AppointmentId {appointmentId}" });
+//     }
+
+//     return Results.Ok(appointmentWithServices);
+// });
+
+app.MapGet("api/customers/{customerId}/appointmentAndService", async (int customerId, HilaryDbContext db) =>
+{
+    var customerAppointmentsWithServices = await db.Appointments
+        .Where(a => a.CustomerId == customerId)
+        .Select(a => new
+        {
+            AppointmentId = a.AppointmentId,
+            TimeOf = a.TimeOf,
+            IsCancelled = a.IsCancelled,
+            Services = a.AppointmentServiceJoinList
+                .Select(asj => new
+                {
+                    ServiceId = asj.Service.ServiceId,
+                    Name = asj.Service.Name,
+                    Price = asj.Service.Price,
+                    DurationMinutes = asj.Service.DurationMinutes
+                })
+                .ToList()
+        })
+        .ToListAsync();
+
+    if (customerAppointmentsWithServices.Count == 0)
+    {
+        return Results.NotFound(new { Message = $"No appointments or services found for CustomerId {customerId}" });
+    }
+
+    return Results.Ok(customerAppointmentsWithServices);
+});
+
+
+
+
 
 
 
