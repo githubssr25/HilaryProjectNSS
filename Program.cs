@@ -18,6 +18,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Logging.AddConsole().AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
+
+
 // Configure EF Core with PostgreSQL
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); // Handles legacy timestamp behavior
 builder.Services.AddNpgsql<HilaryDbContext>(builder.Configuration["HilaryProjectDbConnectionString"]); // Replace with your DbContext class
@@ -94,32 +97,36 @@ app.MapGet("api/customers", async (HilaryDbContext db, IMapper mapper) =>
     .Include(c => c.Appointments)
         .ThenInclude(a => a.AppointmentServiceJoinList) // Include the join table for services
         .ThenInclude(asj => asj.Service)
-     .Select(customer => new 
+        .Select(customer => new
     {
         CustomerId = customer.CustomerId,
         Name = customer.Name,
-        Appointments = customer.Appointments.Select(appointment => new 
+        Appointments = customer.Appointments.Select(appointment => new
         {
             AppointmentId = appointment.AppointmentId,
             TimeOf = appointment.TimeOf,
             IsCancelled = appointment.IsCancelled,
-            Stylist = new 
-            { Id = appointment.Stylist.Id,
-              Name = appointment.Stylist.Name,
-              IsActive = appointment.Stylist.IsActive
+            Stylist = new
+            {
+                Id = appointment.Stylist.Id,
+                Name = appointment.Stylist.Name,
+                IsActive = appointment.Stylist.IsActive
             },
-            Customer = new {
+            Customer = new
+            {
                 Id = appointment.CustomerId,
-                Name = appointment.Customer.Name,
+                Name = appointment.Customer.Name
             },
             Services = appointment.AppointmentServiceJoinList
-            .Select(asJL => new 
-            { ServiceId = asJL.Service.ServiceId,
-                 Name = asJL.Service.Name,
-                 Price = asJL.Service.Price,
-                DurationMinutes = asJL.Service.DurationMinutes
-            }).ToList()
-        }),
+                .Where(asj => asj.Service != null) // Ensure services are valid
+                .Select(asj => new
+                {
+                    ServiceId = asj.Service.ServiceId,
+                    Name = asj.Service.Name,
+                    Price = asj.Service.Price,
+                    DurationMinutes = asj.Service.DurationMinutes
+                }).ToList()
+        }).ToList(),
         Services = customer.Appointments.SelectMany(eachAppt => 
         eachAppt.AppointmentServiceJoinList.Select( asJL => new {
              ServiceId = asJL.Service.ServiceId,
@@ -193,6 +200,53 @@ app.MapGet("api/appointments", async (HilaryDbContext db) =>
 });
 
 
+app.MapGet("api/appointments/customer/{customerId}", async (HilaryDbContext db, int customerId) =>
+{
+    var appointments = await db.Appointments
+        .Where(a => a.CustomerId == customerId) // Filter by CustomerId
+        .Include(a => a.Customer) // Include Customer details
+        .Include(a => a.Stylist) // Include Stylist details
+        .Include(a => a.AppointmentServiceJoinList) // Include Join Table for Services
+            .ThenInclude(asj => asj.Service) // Include Services from the Join Table
+        .Select(indAppt => new
+        {
+            AppointmentId = indAppt.AppointmentId,
+            CustomerId = indAppt.CustomerId,
+            CustomerName = indAppt.Customer.Name,
+            StylistName = indAppt.Stylist.Name,
+            TimeOf = indAppt.TimeOf,
+            IsCancelled = indAppt.IsCancelled,
+            Services = indAppt.AppointmentServiceJoinList.Select(asJoin => new
+            {
+                ServiceId = asJoin.ServiceId,
+                Name = asJoin.Service.Name,
+                Price = asJoin.Service.Price,
+                DurationMinutes = asJoin.Service.DurationMinutes
+            }).ToList(),
+            Customer = new
+            {
+                CustomerId = indAppt.Customer.CustomerId,
+                Name = indAppt.Customer.Name,
+                AppointmentIds = indAppt.Customer.Appointments.Select(appt => appt.AppointmentId).ToList()
+            },
+            Stylist = new
+            {
+                StylistId = indAppt.Stylist.Id,
+                Name = indAppt.Stylist.Name,
+                IsActive = indAppt.Stylist.IsActive,
+                ServiceIds = indAppt.Stylist.StylistServiceJoinList
+                    .Select(ssj => ssj.ServiceId)
+                    .ToList()
+            }
+        }).ToListAsync();
+
+    if (!appointments.Any())
+    {
+        return Results.NotFound($"No appointments found for CustomerId {customerId}");
+    }
+
+    return Results.Ok(appointments);
+});
 
 
 app.MapGet("api/appointments/{id}", async (HilaryDbContext db, IMapper mapper, int id) =>
@@ -239,6 +293,118 @@ app.MapGet("api/appointments/{id}", async (HilaryDbContext db, IMapper mapper, i
     });
     return Results.Ok(appointmentDTO);
 });
+
+
+app.MapPost("api/appointments", async (HilaryDbContext db, CreateAppointmentDTO newAppointmentDTO) =>
+{
+     Console.WriteLine($"Received Appointment DTO: CustomerId={newAppointmentDTO.CustomerId}, StylistId={newAppointmentDTO.StylistId}, TimeOf={newAppointmentDTO.TimeOf}, ServiceIds={string.Join(",", newAppointmentDTO.ServiceIds ?? new List<int>())}");
+
+    // Validate the input
+    if (newAppointmentDTO.CustomerId <= 0 || newAppointmentDTO.StylistId <= 0 || newAppointmentDTO.ServiceIds == null || !newAppointmentDTO.ServiceIds.Any())
+    {
+        return Results.BadRequest("Invalid appointment data.");
+    }
+
+    if (!db.Customers.Any(c => c.CustomerId == newAppointmentDTO.CustomerId))
+{
+    return Results.BadRequest($"Invalid CustomerId: {newAppointmentDTO.CustomerId}");
+}
+
+        // Ensure the Customer exists
+    var customer = await db.Customers.FindAsync(newAppointmentDTO.CustomerId);
+    if (customer == null)
+    {
+        return Results.NotFound($"Customer with ID {newAppointmentDTO.CustomerId} not found.");
+    }
+    db.Entry(customer).State = EntityState.Unchanged;
+
+    var stylist = await db.Stylists.Include(s => s.Appointments).FirstOrDefaultAsync(s => s.Id == newAppointmentDTO.StylistId);
+
+    if (customer == null || stylist == null)
+    {
+        return Results.NotFound("Customer or stylist not found.");
+    }
+
+    // Create the Appointment
+    var newAppointment = new Appointment
+    {
+        CustomerId = newAppointmentDTO.CustomerId,
+        StylistId = newAppointmentDTO.StylistId,
+        TimeOf = newAppointmentDTO.TimeOf ?? DateTime.Now,
+        IsCancelled = false,
+        // Customer = customer,Instead, rely on EF Core's ability to link the Customer through the CustomerId foreign key.
+        // Remove the Customer = customer assignment and only assign CustomerId.
+        Stylist = stylist,
+        AppointmentServiceJoinList = new List<AppointmentServiceJoinTable>()
+    };
+
+    db.Appointments.Add(newAppointment);
+       //we need this to generate our appointmentID for the appointmentserviceJointable later 
+
+    // customer.Appointments.Add(newAppointment);
+ //IMPORTANT DONT NEED THIS TO ENSURE ensure the Appointment is correctly saved or linked to the Customer
+ // because the relationship is already established via the CustomerId and Customer navigation property in the newAppointment object
+
+    await db.SaveChangesAsync(); // Now newAppointment.AppointmentId is set
+
+    //
+    // public class Appointment {
+    //     public int AppointmentId { get; set; } // Primary Key
+    //     public int CustomerId { get; set; } // Foreign Key
+    //     public int StylistId { get; set; } // Foreign Key
+    //     public DateTime TimeOf { get; set; } // Date and time of the appointment
+    //     public bool IsCancelled { get; set; } // Tracks cancellation status
+    //     public Customer Customer { get; set; }
+    //     public Stylist Stylist { get; set; }
+    //     public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
+    // }
+
+    foreach (int serviceId in newAppointmentDTO.ServiceIds)
+    {
+        var service = db.Services.FirstOrDefault(s => s.ServiceId == serviceId);
+        if (service == null)
+        {
+            return Results.NotFound("service not found for the list of ids passed");
+        }
+        AppointmentServiceJoinTable asJT = new AppointmentServiceJoinTable
+        {
+            AppointmentId = newAppointment.AppointmentId,
+            ServiceId = serviceId,
+            Cost = service.Price,
+            // Appointment = newAppointment,
+            // Service = service
+        };
+        db.AppointmentServices.Add(asJT);
+        await db.SaveChangesAsync();
+
+        service.AppointmentServiceJoinList.Add(asJT);
+        await db.SaveChangesAsync();
+    }
+    // Save the join table entries
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/appointments/{newAppointment.AppointmentId}", newAppointmentDTO);
+
+});
+
+// public class AppointmentServiceJoinTable
+// {
+//     public int AppointmentServiceId { get; set; } // Single-column primary key
+//     public int AppointmentId { get; set; } // Composite Key Part 1
+//     public int ServiceId { get; set; } // Composite Key Part 2
+//     public decimal Cost { get; set; } // Cost of the service for this appointment
+//     public Appointment Appointment { get; set; }
+//     public Service Service { get; set; }
+// }
+
+// public class Service
+// {
+//     public int ServiceId { get; set; } // Primary Key
+//     public string Name { get; set; } // Name of the service
+//     public decimal Price { get; set; } // Price of the service
+//     public int DurationMinutes { get; set; } // Duration of the service in minutes
+//     public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
+//     public List<StylistServiceJoinTable> StylistServiceJoinList { get; set; }
+// }
 
 
 app.MapGet("api/services", async (HilaryDbContext db, IMapper mapper) =>

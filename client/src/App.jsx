@@ -6,6 +6,7 @@ import {Appointments} from './components/Appointments';
 import Customers from './components/Customers';
 import { GlobalProvider } from './components/GlobalContext';
 import {CreateAppointment} from './components/CreateAppointment';
+import {GetBalance} from './components/GetBalance';
 
 
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/createAppointment" element={<CreateAppointment />}/>
+          <Route path="/getBalance" element={<GetBalance />} />
         </Routes>
       </div>
     </GlobalProvider>
