@@ -118,7 +118,6 @@ app.MapGet("api/customers", async (HilaryDbContext db, IMapper mapper) =>
                 Name = appointment.Customer.Name
             },
             Services = appointment.AppointmentServiceJoinList
-                .Where(asj => asj.Service != null) // Ensure services are valid
                 .Select(asj => new
                 {
                     ServiceId = asj.Service.ServiceId,
