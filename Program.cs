@@ -50,21 +50,11 @@ app.UseHttpsRedirection();
 app.MapGet("/", () => "Hillary's Hair Care API is running!");
 
 
-
-//public class CreateAppointmentDTO
-// {
-//     public int CustomerId { get; set; }
-//     public int StylistId { get; set; }
-//     public DateTime TimeOf { get; set; }
-//     public List<int>? ServiceIds { get; set; } // IDs of services for this appointment
-// }
-
-
-
-
-
 app.MapPost("api/customers", async (HilaryDbContext db, IMapper mapper, CreateCustomerDTO createCustomerDTO) =>
 {
+
+      if (string.IsNullOrWhiteSpace(createCustomerDTO.Name))
+        return Results.BadRequest(new { Message = "Customer name cannot be empty." });
     // Map the incoming DTO to a Customer entity
     var newCustomer = mapper.Map<Customer>(createCustomerDTO);
 
@@ -145,14 +135,6 @@ app.MapGet("api/customers", async (HilaryDbContext db, IMapper mapper) =>
 
 return Results.Ok(customers);
 
-
-
-    // var customer = mapper.Map<Customer>(createCustomerDTO);
-    // db.Customers.Add(customer);
-    // await db.SaveChangesAsync();
-    // var customerDTO = mapper.Map<CustomerDTO>(customer); 
-    // customerDTO.AppointmentIds = new List<int>();
-    // return Results.Created($"/api/customers/{customer.CustomerId}", customerDTO);
 });
 
 
@@ -197,56 +179,6 @@ app.MapGet("api/appointments", async (HilaryDbContext db) =>
 
     return Results.Ok(appointments); // Return all appointments
 });
-
-//sdont think its working right 
-// app.MapGet("api/appointments/customer/{customerId}", async (HilaryDbContext db, int customerId) =>
-// {
-//     var appointments = await db.Appointments
-//         .Where(a => a.CustomerId == customerId) // Filter by CustomerId
-//         .Include(a => a.Customer) // Include Customer details
-//         .Include(a => a.Stylist) // Include Stylist details
-//         .Include(a => a.AppointmentServiceJoinList) // Include Join Table for Services
-//             .ThenInclude(asj => asj.Service) // Include Services from the Join Table
-//         .Select(indAppt => new
-//         {
-//             AppointmentId = indAppt.AppointmentId,
-//             CustomerId = indAppt.CustomerId,
-//             CustomerName = indAppt.Customer.Name,
-//             StylistName = indAppt.Stylist.Name,
-//             TimeOf = indAppt.TimeOf,
-//             IsCancelled = indAppt.IsCancelled,
-//             Services = indAppt.AppointmentServiceJoinList.Select(asJoin => new
-//             {
-//                 ServiceId = asJoin.ServiceId,
-//                 Name = asJoin.Service.Name,
-//                 Price = asJoin.Service.Price,
-//                 DurationMinutes = asJoin.Service.DurationMinutes
-//             }).ToList(),
-//             Customer = new
-//             {
-//                 CustomerId = indAppt.Customer.CustomerId,
-//                 Name = indAppt.Customer.Name,
-//                 AppointmentIds = indAppt.Customer.Appointments.Select(appt => appt.AppointmentId).ToList()
-//             },
-//             Stylist = new
-//             {
-//                 StylistId = indAppt.Stylist.Id,
-//                 Name = indAppt.Stylist.Name,
-//                 IsActive = indAppt.Stylist.IsActive,
-//                 ServiceIds = indAppt.Stylist.StylistServiceJoinList
-//                     .Select(ssj => ssj.ServiceId)
-//                     .ToList()
-//             }
-//         }).ToListAsync();
-
-//     if (!appointments.Any())
-//     {
-//         return Results.NotFound($"No appointments found for CustomerId {customerId}");
-//     }
-
-//     return Results.Ok(appointments);
-// });
-
 
 app.MapGet("api/appointments/{id}", async (HilaryDbContext db, IMapper mapper, int id) =>
 {
@@ -346,17 +278,6 @@ app.MapPost("api/appointments", async (HilaryDbContext db, CreateAppointmentDTO 
 
     await db.SaveChangesAsync(); // Now newAppointment.AppointmentId is set
 
-    //
-    // public class Appointment {
-    //     public int AppointmentId { get; set; } // Primary Key
-    //     public int CustomerId { get; set; } // Foreign Key
-    //     public int StylistId { get; set; } // Foreign Key
-    //     public DateTime TimeOf { get; set; } // Date and time of the appointment
-    //     public bool IsCancelled { get; set; } // Tracks cancellation status
-    //     public Customer Customer { get; set; }
-    //     public Stylist Stylist { get; set; }
-    //     public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
-    // }
 
     foreach (int serviceId in newAppointmentDTO.ServiceIds)
     {
@@ -384,26 +305,6 @@ app.MapPost("api/appointments", async (HilaryDbContext db, CreateAppointmentDTO 
     return Results.Created($"/api/appointments/{newAppointment.AppointmentId}", newAppointmentDTO);
 
 });
-
-// public class AppointmentServiceJoinTable
-// {
-//     public int AppointmentServiceId { get; set; } // Single-column primary key
-//     public int AppointmentId { get; set; } // Composite Key Part 1
-//     public int ServiceId { get; set; } // Composite Key Part 2
-//     public decimal Cost { get; set; } // Cost of the service for this appointment
-//     public Appointment Appointment { get; set; }
-//     public Service Service { get; set; }
-// }
-
-// public class Service
-// {
-//     public int ServiceId { get; set; } // Primary Key
-//     public string Name { get; set; } // Name of the service
-//     public decimal Price { get; set; } // Price of the service
-//     public int DurationMinutes { get; set; } // Duration of the service in minutes
-//     public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
-//     public List<StylistServiceJoinTable> StylistServiceJoinList { get; set; }
-// }
 
 
 app.MapGet("api/services", async (HilaryDbContext db, IMapper mapper) =>
@@ -616,6 +517,171 @@ app.MapGet("api/customers/{customerId}/appointmentAndService", async (int custom
     return Results.Ok(customerAppointmentsWithServices);
 });
 
+
+app.MapPut("api/stylists/{id}/deactivate", async (HilaryDbContext db, int id) =>
+{
+    var stylist = await db.Stylists.FirstOrDefaultAsync(s => s.Id == id);
+
+    if (stylist == null)
+        return Results.NotFound(new { Message = $"Stylist with ID {id} not found." });
+
+    stylist.IsActive = false; // Deactivate stylist
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { Message = $"Stylist with ID {id} has been deactivated." });
+});
+
+
+
+
+app.MapPut("api/appointments/{appointmentId}", async (HilaryDbContext db, int appointmentId, UpdateAppointmentDTO updatedAppointmentDTO) =>
+{
+    Console.WriteLine($"Updating Appointment ID {appointmentId} with new data.");
+
+    // Find the existing appointment
+    var appointment = await db.Appointments
+        .Include(a => a.AppointmentServiceJoinList)
+        .ThenInclude(asj => asj.Service)
+        .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+    if (appointment == null)
+    {
+        return Results.NotFound($"Appointment with ID {appointmentId} not found.");
+    }
+  // Update appointment time if necessary
+    if (updatedAppointmentDTO.TimeOf.HasValue && updatedAppointmentDTO.TimeOf != appointment.TimeOf)
+    {
+        appointment.TimeOf = updatedAppointmentDTO.TimeOf.Value;
+    }
+
+    // Update cancellation status if necessary
+    if (updatedAppointmentDTO.IsCancelled != appointment.IsCancelled)
+    {
+        appointment.IsCancelled = updatedAppointmentDTO.IsCancelled ?? appointment.IsCancelled;
+        //how to get around fact it is public bool? IsCancelled { get; set; }
+    }
+
+        // Update stylist if necessary
+    if (updatedAppointmentDTO.StylistId != appointment.StylistId)
+    {
+        var stylist = await db.Stylists.FirstOrDefaultAsync(s => s.Id == updatedAppointmentDTO.StylistId);
+        if (stylist == null)
+        {
+            return Results.NotFound($"Stylist with ID {updatedAppointmentDTO.StylistId} not found.");
+        }
+        appointment.StylistId = updatedAppointmentDTO.StylistId;
+        appointment.Stylist = stylist;
+    }
+
+
+// Step 1: Retrieve current services for the appointment
+var currentServiceIds = appointment.AppointmentServiceJoinList
+    .Select(asj => asj.ServiceId)
+    .ToList();
+
+// Step 2: Compare current and updated service IDs
+var updatedServiceIds = updatedAppointmentDTO.UpdatedServiceIds ?? new List<int>();
+
+var servicesToRemove = currentServiceIds.Except(updatedServiceIds).ToList(); // Services no longer needed
+var servicesToAdd = updatedServiceIds.Except(currentServiceIds).ToList();   // New services to add
+
+//ex 
+// var currentServiceIds = new List<int> { 1, 2, 3, 4 };
+// var updatedServiceIds = new List<int> { 3, 4, 5, 6 };
+// var servicesToRemove = currentServiceIds.Except(updatedServiceIds).ToList();
+// currentServiceIds: { 1, 2, 3, 4 }
+// updatedServiceIds: { 3, 4, 5, 6 }
+// Result (servicesToRemove): { 1, 2 }
+
+//so now directly remove then from the appointment services join table 
+db.AppointmentServices.RemoveRange(
+    db.AppointmentServices.Where(asJ => servicesToRemove.Contains(asJ.ServiceId)));
+
+await db.SaveChangesAsync();
+    //now directly add the updated Services to this join table 
+
+    var newJoinTableEntries = servicesToAdd
+                    .Select(serviceId => {
+                     var service = db.Services.FirstOrDefault(s => s.ServiceId == serviceId);
+                      if (service == null) {
+                          throw new InvalidOperationException($"Service with ID {serviceId} not found."); // Short-circuit the process
+                        }
+                        return new AppointmentServiceJoinTable {
+                            AppointmentId = appointmentId,
+                            ServiceId = serviceId,
+                            Cost = service.Price,
+                            Appointment = db.Appointments.FirstOrDefault(a => a.AppointmentId == appointmentId),
+                            Service = service
+                        };
+                              }).ToList();
+
+    db.AppointmentServices.AddRange(newJoinTableEntries);
+await db.SaveChangesAsync();
+
+var updatedAppointment = await db.Appointments
+    .Include(a => a.AppointmentServiceJoinList)
+        .ThenInclude(asj => asj.Service)
+    .Include(a => a.Stylist)
+    .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+if (updatedAppointment == null)
+{
+    return Results.NotFound($"Updated appointment with ID {appointmentId} not found.");
+}
+
+var updatedAppointmentDTOReturn = new 
+{
+    AppointmentId = updatedAppointment.AppointmentId,
+    CustomerId = updatedAppointment.CustomerId,
+    StylistId = updatedAppointment.StylistId,
+    TimeOf = updatedAppointment.TimeOf,
+    IsCancelled = updatedAppointment.IsCancelled,
+    Services = updatedAppointment.AppointmentServiceJoinList.Select(asj => new ServiceDTO
+    {
+        ServiceId = asj.Service.ServiceId,
+        Name = asj.Service.Name,
+        Price = asj.Service.Price,
+        DurationMinutes = asj.Service.DurationMinutes
+    }).ToList()
+};
+
+
+return Results.Ok(updatedAppointmentDTOReturn);
+});
+
+
+
+// public class Appointment {
+//     public int AppointmentId { get; set; } // Primary Key
+//     public int CustomerId { get; set; } // Foreign Key
+//     public int StylistId { get; set; } // Foreign Key
+//     public DateTime TimeOf { get; set; } // Date and time of the appointment
+//     public bool IsCancelled { get; set; } // Tracks cancellation status
+   // Navigation properties
+//     public Customer Customer { get; set; }
+//     public Stylist Stylist { get; set; }
+//     public List<AppointmentServiceJoinTable> AppointmentServiceJoinList { get; set; }
+// }
+
+//     public class UpdateAppointmentDTO {
+//         public int AppointmentId { get; set; }
+//         public int StylistId { get; set; } // Include stylist ID for potential updates
+//         public DateTime? TimeOf { get; set; } // Allow updating the appointment time
+//         public bool? IsCancelled { get; set; } // Allow toggling the cancellation status
+//         public List<int>? UpdatedServiceIds { get; set; } // Updated list of service IDs
+//     }
+
+// public class AppointmentServiceJoinTable{
+
+//     public int AppointmentServiceId { get; set; } // Single-column primary key
+//     public int AppointmentId { get; set; } // Composite Key Part 1
+//     public int ServiceId { get; set; } // Composite Key Part 2
+    // Optional attributes
+//     public decimal Cost { get; set; } // Cost of the service for this appointment
+  // Navigation properties
+//     public Appointment Appointment { get; set; }
+//     public Service Service { get; set; }
+// }
 
 
 

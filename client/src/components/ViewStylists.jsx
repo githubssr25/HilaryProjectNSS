@@ -31,7 +31,8 @@ export const ViewAllStylists = () => {
   }, [stylists]); // Depend only on `stylists`
 
   
-  const submitDeactivate = async () => {
+  const submitDeactivate = async (e) => {
+    e.preventDefault();
     const didWeDeactivate = deactivateStylist(parseInt(deactivateStylistId));
     if(didWeDeactivate){
       const ourStylist = stylists.find(eachStylist => parseInt(eachStylist.stylistId) == parseInt(deactivateStylistId));

@@ -15,6 +15,10 @@ export const CreateAppointment = () => {
 
   // Sync selected stylist
 // Sync selected stylist
+
+const activeStylists = stylists.filter((stylist) => stylist.isActive);
+
+
 useEffect(() => {
     if (chosenStylistId) {
       console.log("Finding stylist with ID:", chosenStylistId);
@@ -144,7 +148,7 @@ useEffect(() => {
             <option value="" disabled>
               Select Which Stylist You Prefer
             </option>
-            {stylists.map((indStylist) => (
+            {activeStylists.map((indStylist) => (
               <option key={indStylist.stylistId} value={indStylist.stylistId}>
                 Name: {indStylist.name} ID: {indStylist.stylistId}
               </option>
