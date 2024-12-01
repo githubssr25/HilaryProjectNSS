@@ -27,7 +27,7 @@ const ourAppointmentAndServiceResponse = await getCustomerAppointmentAndServices
 
 console.log("value of ourAppointmentAndServiceResponse", ourAppointmentAndServiceResponse);
 
-if(ourAppointmentAndService != null){
+if(ourAppointmentAndServiceResponse != null){
   setOurAppointmentAndService(ourAppointmentAndServiceResponse);
 }
 
@@ -53,7 +53,7 @@ return totalPrice;//you need this so calculateTotalPrice(ourAppointmentAndServic
   return (
     <>
       <form onSubmit={onSubmitForm}>
-        <label htmlFor="customer">Find Total Balance Owed</label>
+        <label htmlFor="customer">Find Total Balance Owed For Appointments So Far</label>
         <div>
           <select
             id="customer"
@@ -76,14 +76,44 @@ return totalPrice;//you need this so calculateTotalPrice(ourAppointmentAndServic
         <button type="submit">Submit</button>
       </form>
 
+{ourPrice !== null && (
+  <div>
+    <h3>Total Balance Owed:</h3>
+    <p>${ourPrice.toFixed(2)}</p>
+    {console.log("Displaying Total Price:", ourPrice)}
 
-      {/* Display the total price if calculated */}
-      {ourPrice !== null && (
-        <div>
-          <h3>Total Balance Owed:</h3>
-          <p>${ourPrice.toFixed(2)}</p>
-        </div>
-      )}
-    </>
-  );
-};
+    {ourAppointmentAndService && (
+      <div>
+        {console.log("Displaying Appointments:", ourAppointmentAndService)}
+        <h3>Appointments:</h3>
+        <ul>
+          {ourAppointmentAndService.map((appt) => (
+            <li key={appt.appointmentId}>
+              {console.log("Rendering Appointment:", appt)}
+              <strong>Appointment ID:</strong> {appt.appointmentId} <br />
+              <strong>Time:</strong> {new Date(appt.timeOf).toLocaleString()} <br />
+              <strong>Status:</strong> {appt.isCancelled ? 'Cancelled' : 'Active'} <br />
+              <strong>Services:</strong>
+              {appt.services.length > 0 ? (
+                <ul>
+                  {appt.services.map((service) => (
+                    <li key={service.serviceId}>
+                      {console.log("Rendering Service:", service)}
+                      {service.name} - ${service.price.toFixed(2)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No Services</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+)}
+
+</>
+  )
+}

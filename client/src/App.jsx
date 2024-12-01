@@ -7,6 +7,7 @@ import Customers from './components/Customers';
 import { GlobalProvider } from './components/GlobalContext';
 import {CreateAppointment} from './components/CreateAppointment';
 import {GetBalance} from './components/GetBalance';
+import {ViewAllStylists} from './components/ViewStylists';
 
 
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/customers" element={<Customers />} />
           <Route path="/createAppointment" element={<CreateAppointment />}/>
           <Route path="/getBalance" element={<GetBalance />} />
+          <Route path="/viewAllStylists" element={<ViewAllStylists />} />
         </Routes>
       </div>
     </GlobalProvider>

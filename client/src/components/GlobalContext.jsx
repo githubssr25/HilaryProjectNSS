@@ -27,16 +27,27 @@ export const GlobalProvider = ({ children }) => {
     }
   };
 
+  const fetchStylists = async () => {
+    try {
+      const fetchedStylists = await getAllStylists();
+      console.log("Fetched Stylists:", fetchedStylists); // Debug log
+      setStylists(fetchedStylists); // Update the state
+      return fetchedStylists; // Return for optional use
+    } catch (error) {
+      console.error("Error fetching stylists:", error);
+      return []; // Return empty array on error
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         await fetchAppointments(); // Fetch appointments initially
         const fetchedCustomers = await getAllCustomers();
-        console.log("Fetched Customers in GlobalProvider:", fetchedCustomers);// Debug log// Debug log
+        console.log("Fetched Customers in GlobalProvider:", fetchedCustomers); // Debug log
         const fetchedServices = await getAllServices();
         console.log("Fetched Services in GlobalProvider:", fetchedServices); // Debug log
-        const fetchedStylists = await getAllStylists(); // Fetch stylists
-        console.log("Fetched Stylists in GlobalProvider:", fetchedStylists); // Debug log
+        const fetchedStylists = await fetchStylists(); // Fetch stylists
         setCustomers(fetchedCustomers);
         setServices(fetchedServices);
         setStylists(fetchedStylists); // Set stylists state
@@ -47,22 +58,23 @@ export const GlobalProvider = ({ children }) => {
     fetchData();
   }, []);
 
-   // Context value to provide both data and manipulation methods
-   const contextValue = {
+  // Context value to provide both data and manipulation methods
+  const contextValue = {
     appointments,
     customers,
     services,
-    stylists, // Add stylists to context
+    stylists,
     setAppointments,
     setCustomers,
     setServices,
-    setStylists, // Add setStylists for external updates
+    setStylists,
+    fetchStylists, // Expose fetchStylists for manual refresh
+    refreshAppointments: fetchAppointments,
     createAppointment,
     updateAppointment,
     deleteAppointment,
     createCustomer,
     deleteCustomer,
-    refreshAppointments: fetchAppointments, // Expose refreshAppointments
   };
 
   return (

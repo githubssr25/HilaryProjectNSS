@@ -5,16 +5,23 @@ export const getAllCustomers = async () => {
     return data;
   };
   
-  export const createCustomer = async (customer) => {
+  export const createCustomer = async (customerName) => {
     const response = await fetch("http://localhost:5173/api/customers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(customer),
+      body: JSON.stringify({ name: customerName }),
     });
+  
+    if (!response.ok) {
+      console.error("Failed to create customer");
+      return null;
+    }
+  
     const data = await response.json();
     console.log("Created Customer:", data);
     return data;
   };
+  
   
   export const deleteCustomer = async (id) => {
     const response = await fetch(`http://localhost:5173/api/customers/${id}`, {

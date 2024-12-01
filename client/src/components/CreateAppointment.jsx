@@ -1,11 +1,11 @@
 import { useContext } from 'react';
 import { GlobalContext } from './GlobalContext';
-import { createContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {createAppointment} from '../data/appointmentData'
 
 
 export const CreateAppointment = () => {
-  const { customers, services, stylists, refreshAppointments } =
+  const { customers, stylists, refreshAppointments } =
     useContext(GlobalContext);
   const [listOfServiceId, setListOfServiceId] = useState([]);
   const [chosenCustomerId, setChosenCustomerId] = useState(null);
