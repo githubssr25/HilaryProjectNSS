@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { createCustomer } from "../data/customerData";
-import { useContext } from 'react';
-import { GlobalContext } from './GlobalContext';
+// import { useContext } from 'react';
+// import { GlobalContext } from './GlobalContext';
 
 export const CreateCustomer = () => {
-  const {customers} = useContext(GlobalContext);
+  // const {customers} = useContext(GlobalContext);
   const [customerName, setCustomerName] = useState("");
   const [message, setMessage] = useState("");
 
