@@ -30,7 +30,7 @@ export const getAppointmentById = async (id) => {
     console.log("Fetching all appointments..."); // Debug log before the fetch
     try {
         const response = await fetch("http://localhost:5173/api/appointments");
-        console.log("Response received for appointments:", response); // Debug log after fetch
+        // console.log("Response received for appointments:", response); // Debug log after fetch
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
